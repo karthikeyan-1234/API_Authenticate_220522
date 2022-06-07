@@ -32,10 +32,6 @@ namespace API_Authenticate_220522
             services.AddControllers();
             services.AddDbContext<TokenDBContext>(t => t.UseSqlServer(Configuration.GetConnectionString("MyConnection")));
             services.AddScoped<IAuthenticator, Authenticator>();
-
-            CorsPolicyBuilder builder = new CorsPolicyBuilder().AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod();
-            CorsPolicy policy = builder.Build();
-            services.AddCors(opt => { opt.AddPolicy("myCors",policy); });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,8 +43,6 @@ namespace API_Authenticate_220522
             }
 
             app.UseHttpsRedirection();
-
-            app.UseCors("myCors");
 
             app.UseRouting();
 
