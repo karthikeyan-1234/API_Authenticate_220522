@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_Authenticate_220522.Migrations
 {
     [DbContext(typeof(TokenDBContext))]
-    [Migration("20220523054330_InitialMigration")]
+    [Migration("20220613073808_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
