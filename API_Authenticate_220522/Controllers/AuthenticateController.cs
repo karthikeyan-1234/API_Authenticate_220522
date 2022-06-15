@@ -36,6 +36,15 @@ namespace API_Authenticate_220522.Controllers
             return BadRequest();
         }
 
+        [HttpPost("CheckLogin",Name ="CheckLogin")]
+        public IActionResult CheckLogin([FromBody] User user)
+        {
+            if (user.name == "Arjun" && user.password == "123456")
+                return Ok();
+
+            return BadRequest();
+        }
+
         [HttpPost("GetRefreshToken",Name = "GetRefreshToken")]
         public IActionResult GetRefreshToken([FromBody] RefreshToken tokenData)
         {
