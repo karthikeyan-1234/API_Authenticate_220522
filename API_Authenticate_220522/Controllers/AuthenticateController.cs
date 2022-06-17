@@ -106,13 +106,6 @@ namespace API_Authenticate_220522.Controllers
 
         }
 
-        [HttpGet("welcome",Name = "welcome")]
-        public IActionResult Welcome()
-        {
-            return Content("Welcome to authentication by Google");
-        }
-
-
 
 
         [HttpPost("CheckLogin",Name ="CheckLogin")]
