@@ -1,10 +1,19 @@
 ﻿using API_Authenticate_220522.Authentication;
 using API_Authenticate_220522.Models;
+
+using Google.Apis.Auth;
+
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace API_Authenticate_220522.Controllers
@@ -14,13 +23,18 @@ namespace API_Authenticate_220522.Controllers
     public class AuthenticateController : ControllerBase
     {
         IAuthenticator authenticator;
+        UserManager<IdentityUser> userManager;
+        IConfiguration configuration;
 
-        public AuthenticateController(IAuthenticator authenticator)
+        public AuthenticateController(IAuthenticator authenticator, UserManager<IdentityUser> userManager,IConfiguration configuration)
         {
             this.authenticator = authenticator;
+            this.userManager = userManager;
+            this.configuration = configuration;
         }
 
         [HttpPost("GetToken",Name = "GetToken")]
+        [Authorize]
         public IActionResult GetToken([FromBody] User user)
         {
             var token = authenticator.Generate_JWT(user.name);
@@ -35,6 +49,16 @@ namespace API_Authenticate_220522.Controllers
 
             return BadRequest();
         }
+
+        [HttpGet("Login",Name = "Login")]
+        [Authorize]
+        public IActionResult Login()
+        {
+            return Ok(new {name = this.User.Identity.Name, isAuthenticated = this.User.Identity.IsAuthenticated, AuthenticationType = this.User.Identity.AuthenticationType });
+        }
+
+
+
 
         [HttpPost("CheckLogin",Name ="CheckLogin")]
         public IActionResult CheckLogin([FromBody] User user)
