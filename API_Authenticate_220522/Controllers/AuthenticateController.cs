@@ -3,6 +3,7 @@ using API_Authenticate_220522.Models;
 
 using Google.Apis.Auth;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -23,14 +24,16 @@ namespace API_Authenticate_220522.Controllers
     public class AuthenticateController : ControllerBase
     {
         IAuthenticator authenticator;
-        UserManager<IdentityUser> userManager;
+        UserManager<ApplicationUser> userManager;
+        SignInManager<ApplicationUser> signInManager;
         IConfiguration configuration;
 
-        public AuthenticateController(IAuthenticator authenticator, UserManager<IdentityUser> userManager,IConfiguration configuration)
+        public AuthenticateController(IAuthenticator authenticator, UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
         {
             this.authenticator = authenticator;
             this.userManager = userManager;
             this.configuration = configuration;
+            this.signInManager = signInManager;
         }
 
         [HttpPost("GetToken",Name = "GetToken")]
@@ -50,11 +53,63 @@ namespace API_Authenticate_220522.Controllers
             return BadRequest();
         }
 
-        [HttpGet("Login",Name = "Login")]
+        [HttpGet("Login", Name = "Login")]
         [Authorize]
-        public IActionResult Login()
+        public IActionResult SignInWithGoogle()
         {
-            return Ok(new {name = this.User.Identity.Name, isAuthenticated = this.User.Identity.IsAuthenticated, AuthenticationType = this.User.Identity.AuthenticationType });
+            var authenticationProperties = signInManager.ConfigureExternalAuthenticationProperties("Google", Url.Action(nameof(HandleExternalLogin)));
+            return Challenge(authenticationProperties, GoogleDefaults.AuthenticationScheme);
+        }
+
+
+        //Returns the User Details upon Successful Logon
+
+        public async Task<IActionResult> HandleExternalLogin()
+        {
+            var info = await signInManager.GetExternalLoginInfoAsync();
+            var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
+
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+
+            if (!result.Succeeded) //user does not exist yet
+            {
+                
+                var newUser = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true
+                };
+                var createResult = await userManager.CreateAsync(newUser);
+                if (!createResult.Succeeded)
+                    throw new Exception(createResult.Errors.Select(e => e.Description).Aggregate((errors, error) => $"{errors}, {error}"));
+
+                await userManager.AddLoginAsync(newUser, info);
+                var newUserClaims = info.Principal.Claims.Append(new Claim("userId", newUser.Id));
+                await userManager.AddClaimsAsync(newUser, newUserClaims);
+                await signInManager.SignInAsync(newUser, isPersistent: false);
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            }
+
+            var result2 = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+
+            var claims = result2.Principal.Identities
+                .FirstOrDefault().Claims.Select(claim => new
+                {
+                    claim.Issuer,
+                    claim.OriginalIssuer,
+                    claim.Type,
+                    claim.Value
+                });
+
+            return Ok(claims);
+
+        }
+
+        [HttpGet("welcome",Name = "welcome")]
+        public IActionResult Welcome()
+        {
+            return Content("Welcome to authentication by Google");
         }
 
 

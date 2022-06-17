@@ -1,5 +1,6 @@
 using API_Authenticate_220522.Authentication;
 using API_Authenticate_220522.Contexts;
+using API_Authenticate_220522.Models;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -38,7 +39,7 @@ namespace API_Authenticate_220522
             services.AddDbContext<TokenDBContext>(t => t.UseSqlServer(Configuration.GetConnectionString("MyConnection")));
             services.AddDbContext<ApplicationDbContext>(t => t.UseSqlServer(Configuration.GetConnectionString("MyConnection")));
             services.AddScoped<IAuthenticator, Authenticator>();
-            services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+            services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
             services.Configure<CookiePolicyOptions>(options =>
             {
                 options.Secure = CookieSecurePolicy.Always;
