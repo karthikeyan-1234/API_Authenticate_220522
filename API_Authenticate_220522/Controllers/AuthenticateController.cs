@@ -66,12 +66,12 @@ namespace API_Authenticate_220522.Controllers
 
         public async Task<IActionResult> HandleExternalLogin()
         {
-            var info = await signInManager.GetExternalLoginInfoAsync();
-            var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
+            var externalLoginInfo = await signInManager.GetExternalLoginInfoAsync();
+            var signInResult = await signInManager.ExternalLoginSignInAsync(externalLoginInfo.LoginProvider, externalLoginInfo.ProviderKey, isPersistent: false);
 
-            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            var email = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email);
 
-            if (!result.Succeeded) //user does not exist yet
+            if (!signInResult.Succeeded) //user does not exist yet
             {
                 
                 var newUser = new ApplicationUser
@@ -84,16 +84,16 @@ namespace API_Authenticate_220522.Controllers
                 if (!createResult.Succeeded)
                     throw new Exception(createResult.Errors.Select(e => e.Description).Aggregate((errors, error) => $"{errors}, {error}"));
 
-                await userManager.AddLoginAsync(newUser, info);
-                var newUserClaims = info.Principal.Claims.Append(new Claim("userId", newUser.Id));
+                await userManager.AddLoginAsync(newUser, externalLoginInfo);
+                var newUserClaims = externalLoginInfo.Principal.Claims.Append(new Claim("userId", newUser.Id));
                 await userManager.AddClaimsAsync(newUser, newUserClaims);
                 await signInManager.SignInAsync(newUser, isPersistent: false);
                 await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             }
 
-            var result2 = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            var authResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            var claims = result2.Principal.Identities
+            var claims = authResult.Principal.Identities
                 .FirstOrDefault().Claims.Select(claim => new
                 {
                     claim.Issuer,
